@@ -161,7 +161,11 @@ const UploadPanel = ({
           <Input
             ref={fileInputRef}
             type="file"
-            accept={acceptedFileTypes}
+            accept={
+              typeof acceptedFileTypes === "string"
+                ? acceptedFileTypes
+                : Object.keys(acceptedFileTypes).join(",")
+            }
             multiple={allowMultiple}
             className="hidden"
             onChange={(e) => handleFileChange(e.target.files)}

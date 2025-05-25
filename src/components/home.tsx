@@ -8,12 +8,20 @@ import UploadPanel from "./UploadPanel";
 import MockupGallery from "./MockupGallery";
 import ProcessingIndicator from "./ProcessingIndicator";
 
+import MockupImage from "./MockupGallery";
+
+// Define the type for a mockup image
+type MockupImageType = {
+  id: string;
+  url: string;
+};
+
 const Home = () => {
   const [designFile, setDesignFile] = useState<File | null>(null);
   const [mockupFiles, setMockupFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
+  const [generatedMockups, setGeneratedMockups] = useState<MockupImageType[]>([]);
 
   const handleDesignUpload = (files: File[]) => {
     if (files.length > 0) {
@@ -32,18 +40,20 @@ const Home = () => {
     setGeneratedMockups([]);
 
     // Mock processing with timeout
-    const mockupCount = mockupFiles.length;
     let currentMockup = 0;
+    const mockupCount = mockupFiles.length;
 
     const mockupInterval = setInterval(() => {
       currentMockup += 1;
       const newProgress = Math.round((currentMockup / mockupCount) * 100);
       setProgress(newProgress);
-
       // Add a generated mockup placeholder
       setGeneratedMockups((prev) => [
         ...prev,
-        `https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80`,
+        {
+          id: `mockup-${currentMockup}`,
+          url: `https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80`,
+        },
       ]);
 
       if (currentMockup >= mockupCount) {
@@ -139,9 +149,10 @@ const Home = () => {
         <div className="mb-8">
           <ProcessingIndicator
             progress={progress}
-            currentItem={Math.ceil((progress / 100) * mockupFiles.length)}
-            totalItems={mockupFiles.length}
             onCancel={handleCancelProcessing}
+            currentIndex={progress === 0 ? 0 : Math.ceil((progress / 100) * mockupFiles.length)}
+            totalCount={mockupFiles.length}
+            isProcessing={isProcessing}
           />
         </div>
       )}
@@ -160,39 +171,27 @@ const Home = () => {
 
         <Tabs defaultValue="gallery" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="gallery">Gallery View</TabsTrigger>
-            <TabsTrigger value="list">List View</TabsTrigger>
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
           </TabsList>
-
           <TabsContent value="gallery">
             <MockupGallery
               mockups={generatedMockups}
-              isLoading={isProcessing}
+              isProcessing={isProcessing}
+              currentProcessingIndex={progress === 0 ? 0 : Math.ceil((progress / 100) * mockupFiles.length)}
+              onCancelProcessing={handleCancelProcessing}
+              onDownloadSingle={(mockupId: string) => {
+                // Implement download logic for a single mockup
+                const mockup = generatedMockups.find(m => m.id === mockupId);
+                if (mockup) {
+                  const link = document.createElement("a");
+                  link.href = mockup.url;
+                  link.download = `mockup-${mockup.id}.png`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }
+              }}
             />
-          </TabsContent>
-
-          <TabsContent value="list">
-            <div className="grid gap-4">
-              {generatedMockups.map((mockup, index) => (
-                <Card key={index}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="h-16 w-16 rounded overflow-hidden mr-4">
-                        <img
-                          src={mockup}
-                          alt={`Mockup ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <span>Mockup {index + 1}</span>
-                    </div>
-                    <Button size="sm" variant="ghost">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
         </Tabs>
       </div>
