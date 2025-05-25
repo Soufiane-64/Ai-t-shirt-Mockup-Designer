@@ -8,13 +8,16 @@ import UploadPanel from "./UploadPanel";
 import MockupGallery from "./MockupGallery";
 import ProcessingIndicator from "./ProcessingIndicator";
 
-import MockupImage from "./MockupGallery";
 
-// Define the type for a mockup image
+// Import the MockupImage type from MockupGallery
 type MockupImageType = {
   id: string;
-  url: string;
+  originalUrl: string;
+  processedUrl: string;
+  status: "completed" | "pending" | "processing" | "failed";
+  progress: number;
 };
+// import type { MockupImage } from "./MockupGallery";
 
 const Home = () => {
   const [designFile, setDesignFile] = useState<File | null>(null);
@@ -24,9 +27,7 @@ const Home = () => {
   const [generatedMockups, setGeneratedMockups] = useState<MockupImageType[]>([]);
 
   const handleDesignUpload = (files: File[]) => {
-    if (files.length > 0) {
-      setDesignFile(files[0]);
-    }
+    setDesignFile(files[0]);
   };
 
   const handleMockupUpload = (files: File[]) => {
@@ -48,15 +49,19 @@ const Home = () => {
       const newProgress = Math.round((currentMockup / mockupCount) * 100);
       setProgress(newProgress);
       // Add a generated mockup placeholder
+      setProgress(newProgress);
+      // Add a generated mockup placeholder
       setGeneratedMockups((prev) => [
         ...prev,
         {
           id: `mockup-${currentMockup}`,
-          url: `https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80`,
+          originalUrl: `https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80`,
+          processedUrl: `https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&q=80`,
+          status: "completed",
+          progress: 100,
         },
       ]);
-
-      if (currentMockup >= mockupCount) {
+      if (currentMockup === mockupCount) {
         clearInterval(mockupInterval);
         setIsProcessing(false);
       }
@@ -184,13 +189,14 @@ const Home = () => {
                 const mockup = generatedMockups.find(m => m.id === mockupId);
                 if (mockup) {
                   const link = document.createElement("a");
-                  link.href = mockup.url;
+                  link.href = mockup.processedUrl;
                   link.download = `mockup-${mockup.id}.png`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
                 }
               }}
+              onDownloadAll={handleDownloadAll}
             />
           </TabsContent>
         </Tabs>
